@@ -1,68 +1,56 @@
-import React, { useState, useCallback } from 'react'
-import { Form, InputGroup, Button } from 'react-bootstrap'
-import { useConversations } from '../contexts/ConversationsProvider';
+import React, { useState } from "react";
+import { Tab, Nav, Button, Modal } from "react-bootstrap";
+import Conversations from "./Conversations";
+import Contacts from "./Contacts";
+import NewContactModal from "./NewContactModal";
+import NewConversationModal from "./NewConversationModal";
 
+const CONVERSATIONS_KEY = "conversations";
+const CONTACTS_KEY = "contacts";
 
-export default function OpenConversation() {
-  const [text, setText] = useState('')
-  const setRef = useCallback(node => {
-    if (node) {
-      node.scrollIntoView({ smooth: true })
-    }
-  }, [])
-  const { sendMessage, selectedConversation } = useConversations()
+export default function Sidebar({ id }) {
+  const [activeKey, setActiveKey] = useState(CONVERSATIONS_KEY);
+  const [modalOpen, setModalOpen] = useState(false);
+  const conversationsOpen = activeKey === CONVERSATIONS_KEY;
 
-  function handleSubmit(e) {
-    e.preventDefault()
-
-    sendMessage(
-      selectedConversation.recipients.map(r => r.id),
-      text
-    )
-    setText('')
+  function closeModal() {
+    setModalOpen(false);
   }
 
   return (
-    <div className="d-flex flex-column flex-grow-1">
-      <div className="flex-grow-1 overflow-auto">
-        <div className="d-flex flex-column align-items-start justify-content-end px-3">
-          {selectedConversation.messages.map((message, index) => {
-            const lastMessage = selectedConversation.messages.length - 1 === index
-            return (
-              <div
-                ref={lastMessage ? setRef : null}
-                key={index}
-                className={`my-1 d-flex flex-column ${message.fromMe ? 'align-self-end align-items-end' : 'align-items-start'}`}
-              >
-                <div
-                  className={`rounded px-2 py-1 ${message.fromMe ? 'bg-primary text-white' : 'border'}`}>
-                  {message.text}
-                </div>
-                <div className={`text-muted small ${message.fromMe ? 'text-right' : ''}`}>
-                  {message.fromMe ? 'You' : message.senderName}
-                </div>
-              </div>
-            )
-
-          })}
+    <div style={{ width: "250px" }} className="d-flex flex-column">
+      <Tab.Container activeKey={activeKey} onSelect={setActiveKey}>
+        <Nav variant="tabs" className="justify-content-center">
+          <Nav.Item>
+            <Nav.Link eventKey={CONVERSATIONS_KEY}>Conversations</Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link eventKey={CONTACTS_KEY}>Contacts</Nav.Link>
+          </Nav.Item>
+        </Nav>
+        <Tab.Content className="border-right overflow-auto flex-grow-1">
+          <Tab.Pane eventKey={CONVERSATIONS_KEY}>
+            <Conversations />
+          </Tab.Pane>
+          <Tab.Pane eventKey={CONTACTS_KEY}>
+            <Contacts />
+          </Tab.Pane>
+        </Tab.Content>
+        <div className="p-2 border-top border-right small">
+          Your Id: <span className="text-muted">{id}</span>
         </div>
-      </div>
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="m-2">
-          <InputGroup>
-            <Form.Control
-              as="textarea"
-              required
-              value={text}
-              onChange={e => setText(e.target.value)}
-              style={{ height: '75px', resize: 'none' }}
-            />
-            <InputGroup.Append>
-              <Button type="submit">Send</Button>
-            </InputGroup.Append>
-          </InputGroup>
-        </Form.Group>
-      </Form>
+        <Button onClick={() => setModalOpen(true)} className="rounded-0">
+          New {conversationsOpen ? "Conversation" : "Contact"}
+        </Button>
+      </Tab.Container>
+
+      <Modal show={modalOpen} onHide={closeModal}>
+        {conversationsOpen ? (
+          <NewConversationModal closeModal={closeModal} />
+        ) : (
+          <NewContactModal closeModal={closeModal} />
+        )}
+      </Modal>
     </div>
-  )
+  );
 }
